@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KO Reimbursement Portal</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#1a4a8a;--blue-dk:#102d5e;--blue-lt:#e8f0fb;
+  --teal:#0f6e56;--teal-lt:#e1f5ee;
+  --red:#a32d2d;--red-lt:#fcebeb;
+  --amber:#85500b;--amber-lt:#faeeda;
+  --gold:#92400e;--gold-lt:#fef3c7;
+  --gray:#6b7280;--border:rgba(0,0,0,.09);
+  --card:#ffffff;--bg:#f2f4f8;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh;}
+input,button,select,textarea{font-family:inherit;}
+.hidden{display:none!important;}
+
+/* ── SHARED ── */
+.page-wrap{min-height:100vh;background:var(--blue);display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.modal-card{background:var(--card);border-radius:14px;padding:2rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.brand{text-align:center;margin-bottom:1.75rem;}
+.brand-logo{width:56px;height:56px;background:var(--blue);border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;}
+.brand h1{font-size:20px;font-weight:700;color:var(--blue);}
+.brand p{font-size:12px;color:var(--gray);margin-top:3px;}
+.fld{margin-bottom:13px;}
+.fld label{display:block;font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;color:var(--blue-dk);outline:none;transition:border-color .2s;background:white;}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue);}
+.fld select{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.fld textarea{resize:vertical;min-height:80px;}
+.btn-primary{width:100%;padding:13px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn-primary:disabled{background:#9ca3af;cursor:not-allowed;}
+.btn-secondary{width:100%;padding:11px;background:transparent;color:var(--blue);border:1.5px solid var(--blue-lt);border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;}
+.btn-secondary:hover{background:var(--blue-lt);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.err{background:var(--red-lt);color:var(--red);border-radius:8px;padding:9px 12px;font-size:12px;text-align:center;margin-top:10px;}
+.suc{background:var(--teal-lt);color:var(--teal);border-radius:8px;padding:9px 12px;font-size:12px;margin-top:10px;line-height:1.6;}
+.warn{background:var(--amber-lt);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:12px;margin-top:10px;line-height:1.6;}
+
+/* ── PIN KEYPAD ── */
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:20px 0 24px;}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #cbd5e1;background:transparent;transition:all .15s;}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue);}
+.pin-dot.err{background:var(--red);border-color:var(--red);}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.pin-key{padding:16px 8px;border:1.5px solid #e5e7eb;border-radius:10px;background:white;font-size:20px;font-weight:700;color:#1a1a2e;cursor:pointer;text-align:center;transition:all .1s;-webkit-tap-highlight-color:transparent;}
+.pin-key:hover{border-color:var(--blue);background:var(--blue-lt);}
+.pin-key:active{transform:scale(.94);}
+.pin-key.del{font-size:16px;color:var(--gray);}
+.pin-key.wide{grid-column:1/3;font-size:14px;font-weight:600;color:var(--gray);}
+.pin-sub{font-size:12px;color:var(--gray);text-align:center;margin-bottom:4px;}
+.link-btn{background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;text-align:center;}
+
+/* ── APP HEADER ── */
+.app-hdr{background:var(--blue);color:white;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-logo{width:30px;height:30px;background:rgba(255,255,255,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.hdr-title{font-size:15px;font-weight:600;}
+.hdr-sub{font-size:11px;opacity:.7;margin-top:1px;}
+.hdr-menu-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:6px 10px;border-radius:7px;font-size:12px;cursor:pointer;}
+.hdr-menu-btn:hover{background:rgba(255,255,255,.25);}
+.page-top{background:white;border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+.back-btn{background:none;border:none;color:var(--blue);font-size:14px;font-weight:600;cursor:pointer;padding:0;}
+.page-top h2{font-size:17px;font-weight:600;}
+.page-top-action{margin-left:auto;background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;padding:5px 9px;border-radius:6px;display:flex;align-items:center;gap:4px;}
+.page-top-action:hover{background:var(--blue-lt);}
+.badge{background:#ef4444;color:white;border-radius:9px;padding:1px 7px;font-size:11px;font-weight:700;}
+
+/* ── ACCOUNT SHEET ── */
+.acct-menu{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;}
+.acct-sheet{background:white;border-radius:16px 16px 0 0;padding:1.5rem;width:100%;max-width:480px;margin:0 auto;}
+.acct-hdr{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;}
+.acct-avatar{width:44px;height:44px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:700;}
+.acct-name{font-size:15px;font-weight:600;}
+.acct-id{font-size:12px;color:var(--gray);}
+.acct-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.acct-item:last-of-type{border-bottom:none;}
+.acct-item:hover .acct-label{color:var(--blue);}
+.acct-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.acct-label{font-size:14px;font-weight:500;}
+.acct-sub{font-size:12px;color:var(--gray);}
+.acct-item.danger .acct-label{color:var(--red);}
+.acct-item.danger .acct-icon{background:var(--red-lt);}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;gap:16px;z-index:100;}
+.lg-spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;}
+
+/* ── HOME DASHBOARD ── */
+.home-body{padding:14px 16px 30px;}
+.dash-welcome{background:var(--blue);border-radius:12px;padding:16px 18px;margin-bottom:12px;color:white;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.dash-welcome-text h2{font-size:17px;font-weight:700;margin-bottom:2px;}
+.dash-welcome-text p{font-size:11px;opacity:.75;}
+.role-pill{flex-shrink:0;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+.rp-staff{background:rgba(255,255,255,.18);color:white;}
+.rp-lm{background:#faeeda;color:#85500b;}
+.rp-finance{background:#e1f5ee;color:#0f6e56;}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.stat-card{background:white;border-radius:10px;border:1px solid var(--border);padding:10px 6px;text-align:center;}
+.stat-val{font-size:18px;font-weight:700;color:var(--blue);}
+.stat-lbl{font-size:9px;color:var(--gray);margin-top:3px;text-transform:uppercase;letter-spacing:.3px;line-height:1.3;}
+.stat-card.teal .stat-val{color:var(--teal);}
+.stat-card.gold .stat-val{color:var(--gold);}
+.stat-card.red .stat-val{color:var(--red);}
+.action-banner{border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px;transition:opacity .15s;}
+.action-banner:hover{opacity:.88;}
+.ab-lm{background:var(--amber-lt);border:1.5px solid rgba(133,80,11,.25);}
+.ab-finance{background:var(--teal-lt);border:1.5px solid rgba(15,110,86,.25);}
+.ab-left{display:flex;align-items:center;gap:12px;}
+.ab-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.ab-lm .ab-icon{background:rgba(133,80,11,.12);}
+.ab-finance .ab-icon{background:rgba(15,110,86,.12);}
+.ab-title{font-size:13px;font-weight:700;}
+.ab-lm .ab-title{color:var(--amber);}
+.ab-finance .ab-title{color:var(--teal);}
+.ab-sub{font-size:11px;color:var(--gray);margin-top:1px;}
+.ab-arrow{font-size:18px;color:var(--gray);}
+.ab-badge{background:var(--red);color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:700;margin-left:6px;}
+.quick-actions h3{font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.action-card{background:white;border-radius:12px;border:1px solid var(--border);padding:16px;cursor:pointer;transition:box-shadow .15s;text-align:center;}
+.action-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.action-icon{font-size:26px;margin-bottom:7px;}
+.action-label{font-size:13px;font-weight:600;color:#1a1a2e;}
+.action-sub{font-size:11px;color:var(--gray);margin-top:2px;}
+
+/* ── FORM ── */
+.reimb-form{padding:14px 16px 30px;}
+.reimb-card{background:white;border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:12px;}
+.reimb-card h3{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.pay-method-grp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.pm-btn{padding:12px 8px;border:2px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;background:white;font-size:12px;font-weight:600;color:var(--gray);transition:all .15s;}
+.pm-btn:hover{border-color:var(--blue);color:var(--blue);}
+.pm-btn.active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);}
+.pm-btn .pm-icon{font-size:20px;display:block;margin-bottom:3px;}
+.pay-detail-field{margin-top:12px;animation:fdIn .2s ease;}
+@keyframes fdIn{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:none;}}
+.attach-zone{border:2px dashed #e5e7eb;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;}
+.attach-zone:hover,.attach-zone:has(input:focus){border-color:var(--blue);}
+.attach-zone.has-file{border-color:var(--teal);background:var(--teal-lt);}
+.attach-info{font-size:11px;color:var(--gray);line-height:1.6;margin-top:4px;}
+.attach-remove{font-size:11px;color:var(--red);cursor:pointer;background:none;border:none;margin-top:4px;}
+/* LM info box */
+.lm-info-box{background:var(--blue-lt);border:1.5px solid rgba(26,74,138,.2);border-radius:8px;padding:11px 13px;font-size:13px;color:var(--blue-dk);}
+.lm-info-box .lm-name{font-weight:600;font-size:14px;}
+.lm-info-box .lm-email{font-size:12px;color:var(--gray);margin-top:2px;}
+/* Backdated warning */
+.backdate-warn{background:var(--amber-lt);border:1.5px solid rgba(133,80,11,.25);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--amber);margin-top:6px;line-height:1.6;}
+
+/* ── HISTORY STATS ── */
+.reimb-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.rs-card{background:white;border-radius:10px;border:1px solid var(--border);padding:10px;text-align:center;}
+.rs-val{font-size:15px;font-weight:700;color:var(--blue);}
+.rs-lbl{font-size:10px;color:var(--gray);margin-top:2px;text-transform:uppercase;letter-spacing:.3px;}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize;}
+.sb-submitted{background:var(--blue-lt);color:var(--blue);}
+.sb-approved{background:var(--teal-lt);color:var(--teal);}
+.sb-rejected{background:var(--red-lt);color:var(--red);}
+.sb-paid{background:var(--gold-lt);color:var(--gold);}
+
+/* ── DETAILED HISTORY CARD ── */
+.hc{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;}
+.hc-header{padding:16px 16px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.hc-amount{font-size:22px;font-weight:700;color:var(--blue);}
+.hc-id{font-size:11px;color:var(--gray);margin-top:3px;font-family:monospace;letter-spacing:.3px;}
+.hc-section{padding:12px 16px;border-bottom:1px solid var(--border);}
+.hc-section:last-child{border-bottom:none;}
+.hc-section-lbl{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.hc-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:4px 0;}
+.hc-row+.hc-row{border-top:1px solid #f5f5f5;}
+.hc-lbl{color:var(--gray);flex-shrink:0;padding-right:10px;}
+.hc-val{font-weight:500;text-align:right;word-break:break-word;max-width:65%;}
+.st-timeline{display:flex;align-items:flex-start;padding:14px 16px 10px;gap:0;}
+.st-step{flex:1;text-align:center;position:relative;}
+.st-step:not(:last-child)::after{content:'';position:absolute;top:10px;left:50%;width:100%;height:2px;background:#e5e7eb;z-index:0;}
+.st-step.st-done:not(:last-child)::after{background:var(--teal);}
+.st-step.st-rejected:not(:last-child)::after{background:var(--red);}
+.st-dot{width:22px;height:22px;border-radius:50%;border:2px solid #e5e7eb;background:white;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;z-index:1;font-weight:700;}
+.st-step.st-done .st-dot{background:var(--teal);border-color:var(--teal);color:white;}
+.st-step.st-rejected .st-dot{background:var(--red);border-color:var(--red);color:white;}
+.st-step.st-current .st-dot{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);}
+.st-lbl{font-size:10px;font-weight:600;color:var(--gray);line-height:1.3;}
+.st-step.st-done .st-lbl{color:var(--teal);}
+.st-step.st-rejected .st-lbl{color:var(--red);}
+.st-step.st-current .st-lbl{color:var(--blue);}
+.st-date{font-size:9px;color:var(--gray);margin-top:2px;line-height:1.4;}
+.reimb-item{background:white;border-radius:10px;border:1px solid var(--border);padding:13px 14px;margin-bottom:9px;}
+.reimb-item-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.reimb-item-amt{font-size:17px;font-weight:700;color:var(--blue);}
+.reimb-item-date{font-size:11px;color:var(--gray);margin-top:2px;}
+.reimb-item-dept{font-size:12px;font-weight:600;color:#1a1a2e;}
+.reimb-item-desc{font-size:12px;color:var(--gray);margin-top:5px;line-height:1.5;}
+.pending-item{background:white;border-radius:10px;border:1.5px solid var(--border);padding:14px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s;}
+.pending-item:hover{box-shadow:0 3px 14px rgba(0,0,0,.1);border-color:var(--blue);}
+.pending-item-hdr{display:flex;justify-content:space-between;align-items:flex-start;}
+.pending-item-name{font-size:14px;font-weight:700;color:#1a1a2e;}
+.pending-item-amt{font-size:16px;font-weight:700;color:var(--blue);}
+.pending-item-meta{font-size:12px;color:var(--gray);margin-top:5px;line-height:1.6;}
+.pending-item-desc{font-size:12px;color:#374151;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;display:flex;align-items:flex-end;}
+.modal-sheet{background:white;border-radius:16px 16px 0 0;padding:1.5rem 1.5rem 2rem;width:100%;max-width:480px;margin:0 auto;max-height:88vh;overflow-y:auto;}
+.modal-title{font-size:17px;font-weight:700;color:#1a1a2e;margin-bottom:16px;}
+.modal-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border);}
+.modal-row:last-of-type{border-bottom:none;}
+.modal-lbl{color:var(--gray);flex-shrink:0;padding-right:12px;}
+.modal-val{font-weight:500;text-align:right;word-break:break-word;max-width:65%;}
+.modal-comment label{display:block;font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;margin-top:16px;}
+.modal-comment textarea{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;resize:none;height:72px;outline:none;}
+.modal-comment textarea:focus{border-color:var(--blue);}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.btn-approve{padding:13px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-approve:hover{background:#0a5442;}
+.btn-approve:disabled,.btn-reject:disabled{opacity:.5;cursor:not-allowed;}
+.btn-reject{padding:13px;background:white;color:var(--red);border:1.5px solid var(--red);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-reject:hover{background:var(--red-lt);}
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+</style>
+</head>
+<body>
+
+<script>
+const CONFIG = {
+  SCRIPT_URL: 'YOUR_REIMBURSEMENT_APPS_SCRIPT_WEB_APP_URL_HERE',
+  CLIENT_SECRET: 'KO@AO#2026$REIMB!yM7nX',
+  DEPARTMENTS: ['Commercial','Marketing','Ops & Production','People'],
+};
+</script>
+
+<div id="app">
+
+<!-- LOADING -->
+<div id="s-loading" class="loading-overlay">
+  <div class="lg-spin"></div>
+  <p style="font-size:14px;opacity:.8">Loading...</p>
+</div>
+
+<!-- LOGIN -->
+<div id="s-login" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Reimbursement Portal</h1>
+        <p>African Originals · Staff Expense Claims</p>
+      </div>
+      <div class="fld">
+        <label>Email Address</label>
+        <input type="email" id="li-email" placeholder="you@africanoriginals.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="fld">
+        <label>Staff ID</label>
+        <input type="text" id="li-sid" placeholder="e.g. AO001" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+      <div id="li-err" class="err hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIN ENTRY -->
+<div id="s-pin" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Enter PIN</h1>
+        <p id="pin-entry-name" style="color:var(--blue);font-weight:600;font-size:13px;margin-top:4px"></p>
+      </div>
+      <div id="pin-lock-msg" class="err hidden"></div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div id="pin-entry-err" style="font-size:12px;color:var(--red);text-align:center;margin-bottom:10px;min-height:18px"></div>
+      <div class="pin-grid">
+        <button class="pin-key" onclick="pinKey('1')">1</button>
+        <button class="pin-key" onclick="pinKey('2')">2</button>
+        <button class="pin-key" onclick="pinKey('3')">3</button>
+        <button class="pin-key" onclick="pinKey('4')">4</button>
+        <button class="pin-key" onclick="pinKey('5')">5</button>
+        <button class="pin-key" onclick="pinKey('6')">6</button>
+        <button class="pin-key" onclick="pinKey('7')">7</button>
+        <button class="pin-key" onclick="pinKey('8')">8</button>
+        <button class="pin-key" onclick="pinKey('9')">9</button>
+        <button class="pin-key wide" onclick="pinKey('0')">0</button>
+        <button class="pin-key del" onclick="pinDel()">&#9003;</button>
+      </div>
+      <button class="link-btn" onclick="goForgotPin()">Forgot PIN?</button>
+      <button class="btn-secondary" onclick="backToLogin()" style="margin-top:12px">&#8592; Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- SET PIN (first time) -->
+<div id="s-setpin" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Create Your PIN</h1>
+        <p>Set a 4-digit PIN to secure your account</p>
+      </div>
+      <p class="pin-sub" id="setpin-step-lbl">Enter new PIN</p>
+      <div class="pin-dots" id="setpin-dots">
+        <div class="pin-dot" id="spd0"></div>
+        <div class="pin-dot" id="spd1"></div>
+        <div class="pin-dot" id="spd2"></div>
+        <div class="pin-dot" id="spd3"></div>
+      </div>
+      <div id="setpin-err" style="font-size:12px;color:var(--red);text-align:center;margin-bottom:10px;min-height:18px"></div>
+      <div class="pin-grid">
+        <button class="pin-key" onclick="setPinKey('1')">1</button>
+        <button class="pin-key" onclick="setPinKey('2')">2</button>
+        <button class="pin-key" onclick="setPinKey('3')">3</button>
+        <button class="pin-key" onclick="setPinKey('4')">4</button>
+        <button class="pin-key" onclick="setPinKey('5')">5</button>
+        <button class="pin-key" onclick="setPinKey('6')">6</button>
+        <button class="pin-key" onclick="setPinKey('7')">7</button>
+        <button class="pin-key" onclick="setPinKey('8')">8</button>
+        <button class="pin-key" onclick="setPinKey('9')">9</button>
+        <button class="pin-key wide" onclick="setPinKey('0')">0</button>
+        <button class="pin-key del" onclick="setPinDel()">&#9003;</button>
+      </div>
+      <div id="setpin-suc" class="suc hidden"></div>
+      <button class="btn-secondary" onclick="backToLogin()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PIN -->
+<div id="s-changepin" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Change PIN</h1>
+        <p>Verify your current PIN first</p>
+      </div>
+      <p class="pin-sub" id="chpin-step-lbl">Enter current PIN</p>
+      <div class="pin-dots" id="chpin-dots">
+        <div class="pin-dot" id="cpd0"></div>
+        <div class="pin-dot" id="cpd1"></div>
+        <div class="pin-dot" id="cpd2"></div>
+        <div class="pin-dot" id="cpd3"></div>
+      </div>
+      <div id="chpin-err" style="font-size:12px;color:var(--red);text-align:center;margin-bottom:10px;min-height:18px"></div>
+      <div class="pin-grid">
+        <button class="pin-key" onclick="chPinKey('1')">1</button>
+        <button class="pin-key" onclick="chPinKey('2')">2</button>
+        <button class="pin-key" onclick="chPinKey('3')">3</button>
+        <button class="pin-key" onclick="chPinKey('4')">4</button>
+        <button class="pin-key" onclick="chPinKey('5')">5</button>
+        <button class="pin-key" onclick="chPinKey('6')">6</button>
+        <button class="pin-key" onclick="chPinKey('7')">7</button>
+        <button class="pin-key" onclick="chPinKey('8')">8</button>
+        <button class="pin-key" onclick="chPinKey('9')">9</button>
+        <button class="pin-key wide" onclick="chPinKey('0')">0</button>
+        <button class="pin-key del" onclick="chPinDel()">&#9003;</button>
+      </div>
+      <div id="chpin-suc" class="suc hidden"></div>
+      <button class="btn-secondary" onclick="closeAcctMenu();show('s-home')" style="margin-top:4px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PIN — REQUEST OTP -->
+<div id="s-reset" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Reset PIN</h1>
+        <p>We'll send a one-time code to your email</p>
+      </div>
+      <div class="fld">
+        <label>Email Address</label>
+        <input type="email" id="rst-email" placeholder="you@africanoriginals.com">
+      </div>
+      <div class="fld">
+        <label>Staff ID</label>
+        <input type="text" id="rst-sid" placeholder="e.g. AO001" style="text-transform:uppercase">
+      </div>
+      <button class="btn-primary" id="rst-btn" onclick="doRequestReset()">Send Reset Code</button>
+      <div id="rst-err" class="err hidden"></div>
+      <div id="rst-suc" class="suc hidden"></div>
+      <button class="btn-secondary" onclick="show('s-pin')">&#8592; Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PIN — VERIFY OTP + SET NEW PIN -->
+<div id="s-verify" class="hidden">
+  <div class="page-wrap">
+    <div class="modal-card">
+      <div class="brand">
+        <div class="brand-logo">KO</div>
+        <h1>Enter Reset Code</h1>
+        <p>Check your email for a 6-digit code</p>
+      </div>
+      <div class="fld">
+        <label>6-Digit Code</label>
+        <input type="text" id="vfy-otp" placeholder="123456" maxlength="6" inputmode="numeric">
+      </div>
+      <div class="fld">
+        <label>New PIN (4 digits)</label>
+        <input type="password" id="vfy-pin1" placeholder="••••" maxlength="4" inputmode="numeric">
+      </div>
+      <div class="fld">
+        <label>Confirm New PIN</label>
+        <input type="password" id="vfy-pin2" placeholder="••••" maxlength="4" inputmode="numeric">
+      </div>
+      <button class="btn-primary" id="vfy-btn" onclick="doVerifyReset()">Set New PIN</button>
+      <div id="vfy-err" class="err hidden"></div>
+      <div id="vfy-suc" class="suc hidden"></div>
+      <button class="btn-secondary" onclick="show('s-reset')">&#8592; Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME DASHBOARD -->
+<div id="s-home" class="hidden">
+  <div class="app-hdr">
+    <div class="hdr-left">
+      <div class="hdr-logo">KO</div>
+      <div><div class="hdr-title">Reimbursement Portal</div><div class="hdr-sub" id="hdr-sub">Staff Portal</div></div>
+    </div>
+    <button class="hdr-menu-btn" onclick="openAcctMenu()">&#9776;</button>
+  </div>
+  <div class="home-body">
+    <div class="dash-welcome">
+      <div class="dash-welcome-text">
+        <h2 id="welcome-name">Welcome</h2>
+        <p id="welcome-dept">African Originals</p>
+      </div>
+      <span id="role-badge" class="role-pill rp-staff">Staff</span>
+    </div>
+    <div class="dash-stats">
+      <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card red"><div class="stat-val" id="stat-pending">—</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-card teal"><div class="stat-val" id="stat-approved">—</div><div class="stat-lbl">Approved</div></div>
+      <div class="stat-card gold"><div class="stat-val" id="stat-paid">—</div><div class="stat-lbl">Paid</div></div>
+    </div>
+    <div id="lm-banner" class="action-banner ab-lm hidden" onclick="goApprovals()">
+      <div class="ab-left">
+        <div class="ab-icon">&#9203;</div>
+        <div>
+          <div class="ab-title">Pending Approvals <span id="lm-badge-count" class="ab-badge">0</span></div>
+          <div class="ab-sub">Claims from your team waiting for your review</div>
+        </div>
+      </div>
+      <div class="ab-arrow">&#8250;</div>
+    </div>
+    <div id="fin-banner" class="action-banner ab-finance hidden" onclick="goFinancePending()">
+      <div class="ab-left">
+        <div class="ab-icon">&#128176;</div>
+        <div>
+          <div class="ab-title">Ready for Payment <span id="fin-badge-count" class="ab-badge">0</span></div>
+          <div class="ab-sub">Approved claims awaiting payment processing</div>
+        </div>
+      </div>
+      <div class="ab-arrow">&#8250;</div>
+    </div>
+    <div class="quick-actions">
+      <h3>Quick Actions</h3>
+      <div class="action-grid">
+        <div class="action-card" onclick="goNewClaim()">
+          <div class="action-icon">&#128221;</div>
+          <div class="action-label">New Claim</div>
+          <div class="action-sub">Submit expense</div>
+        </div>
+        <div class="action-card" onclick="goHistory()">
+          <div class="action-icon">&#128203;</div>
+          <div class="action-label">My Claims</div>
+          <div class="action-sub">View history</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNT MENU -->
+<div id="acct-overlay" class="acct-menu hidden" onclick="if(event.target===this)closeAcctMenu()">
+  <div class="acct-sheet">
+    <div class="acct-hdr">
+      <div class="acct-avatar" id="acct-avatar">?</div>
+      <div>
+        <div class="acct-name" id="acct-name-m"></div>
+        <div class="acct-id" id="acct-id-m"></div>
+        <div id="acct-role-lbl" style="font-size:11px;margin-top:3px;font-weight:600;color:var(--blue)"></div>
+      </div>
+    </div>
+    <div class="acct-item" onclick="closeAcctMenu();goNewClaim()">
+      <div class="acct-icon" style="background:var(--blue-lt)">&#128221;</div>
+      <div><div class="acct-label">Submit New Claim</div><div class="acct-sub">Expense reimbursement request</div></div>
+    </div>
+    <div class="acct-item" onclick="closeAcctMenu();goHistory()">
+      <div class="acct-icon" style="background:var(--teal-lt)">&#128203;</div>
+      <div><div class="acct-label">My Claims</div><div class="acct-sub">View all my submissions</div></div>
+    </div>
+    <div class="acct-item" onclick="closeAcctMenu();goChangePin()">
+      <div class="acct-icon" style="background:var(--blue-lt)">&#128274;</div>
+      <div><div class="acct-label">Change PIN</div><div class="acct-sub">Update your 4-digit PIN</div></div>
+    </div>
+    <div class="acct-item" id="menu-lm-item" style="display:none" onclick="closeAcctMenu();goApprovals()">
+      <div class="acct-icon" style="background:var(--amber-lt)">&#9989;</div>
+      <div>
+        <div class="acct-label">Team Approvals <span id="menu-badge" class="badge" style="display:none">0</span></div>
+        <div class="acct-sub">Review pending claims from your team</div>
+      </div>
+    </div>
+    <div class="acct-item" id="menu-fin-item" style="display:none" onclick="closeAcctMenu();goFinancePending()">
+      <div class="acct-icon" style="background:var(--teal-lt)">&#128176;</div>
+      <div>
+        <div class="acct-label">Process Payments <span id="menu-fin-badge" class="badge" style="display:none">0</span></div>
+        <div class="acct-sub">Mark approved claims as paid</div>
+      </div>
+    </div>
+    <div class="acct-item danger" onclick="doLogout()">
+      <div class="acct-icon" style="background:var(--red-lt)">&#128682;</div>
+      <div><div class="acct-label">Logout</div><div class="acct-sub">Sign out of this device</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CLAIM FORM -->
+<div id="s-form" class="hidden">
+  <div class="page-top">
+    <button class="back-btn" onclick="goHome()">&#8592; Back</button>
+    <h2>New Expense Claim</h2>
+  </div>
+  <div class="reimb-form">
+    <div class="reimb-card">
+      <h3>&#128203; Claim Details</h3>
+      <div class="fld">
+        <label>Expense Date</label>
+        <input type="date" id="rb-date" onchange="checkBackdate()">
+        <div id="backdate-warn" class="backdate-warn hidden"></div>
+      </div>
+      <div class="fld">
+        <label>Department</label>
+        <select id="rb-dept">
+          <option value="">— Select department —</option>
+        </select>
+      </div>
+      <!-- LM info box — readonly, populated from user object -->
+      <div class="fld">
+        <label>Line Manager (Approver)</label>
+        <div class="lm-info-box" id="lm-info-box">
+          <div class="lm-name" id="lm-info-name">—</div>
+          <div class="lm-email" id="lm-info-email"></div>
+        </div>
+      </div>
+      <div class="fld">
+        <label>Requested Amount (KES)</label>
+        <input type="number" id="rb-amount" placeholder="0.00" min="1" step="0.01">
+      </div>
+      <div class="fld">
+        <label>Description of Expense</label>
+        <textarea id="rb-desc" placeholder="Provide a clear description of what this expense was for..."></textarea>
+      </div>
+    </div>
+
+    <div class="reimb-card">
+      <h3>&#128179; Payment Details</h3>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:12px;">How should we pay you back?</p>
+      <div class="pay-method-grp">
+        <button class="pm-btn" id="pm-account" onclick="selectPayMethod('account')">
+          <span class="pm-icon">&#127970;</span>Bank Account
+        </button>
+        <button class="pm-btn" id="pm-paybill" onclick="selectPayMethod('paybill')">
+          <span class="pm-icon">&#128242;</span>Paybill
+        </button>
+        <button class="pm-btn" id="pm-mpesa" onclick="selectPayMethod('mpesa')">
+          <span class="pm-icon">&#128241;</span>M-Pesa
+        </button>
+        <button class="pm-btn" id="pm-till" onclick="selectPayMethod('till')">
+          <span class="pm-icon">&#127978;</span>Till Number
+        </button>
+      </div>
+      <div id="pd-account" class="pay-detail-field hidden">
+        <div class="fld"><label>Bank Name</label><input type="text" id="pd-bank" placeholder="e.g. Equity Bank"></div>
+        <div class="fld"><label>Account Number</label><input type="text" id="pd-accnum" placeholder="Account number" inputmode="numeric"></div>
+      </div>
+      <div id="pd-paybill" class="pay-detail-field hidden">
+        <div class="fld"><label>Paybill Number</label><input type="text" id="pd-pbnum" placeholder="e.g. 247247" inputmode="numeric"></div>
+        <div class="fld"><label>Account Reference</label><input type="text" id="pd-pbref" placeholder="Account reference / name"></div>
+      </div>
+      <div id="pd-mpesa" class="pay-detail-field hidden">
+        <div class="fld"><label>M-Pesa Number</label><input type="tel" id="pd-mpnum" placeholder="e.g. 0712 345 678" inputmode="numeric"></div>
+      </div>
+      <div id="pd-till" class="pay-detail-field hidden">
+        <div class="fld"><label>Till Number</label><input type="text" id="pd-tillnum" placeholder="e.g. 123456" inputmode="numeric"></div>
+      </div>
+    </div>
+
+    <div class="reimb-card">
+      <h3>&#128206; Supporting Document <span style="font-size:12px;font-weight:400;color:var(--gray)">(Optional)</span></h3>
+      <div class="attach-zone" id="attach-zone" onclick="qs('rb-file').click()">
+        <div style="font-size:28px;margin-bottom:6px">&#128196;</div>
+        <div id="attach-info" class="attach-info">Tap to attach receipt or supporting document<br>Photos, PDF, Excel, Word — max 5 MB</div>
+        <button id="attach-remove-btn" class="attach-remove hidden" onclick="event.stopPropagation();removeAttach()">&#10005; Remove</button>
+      </div>
+      <input type="file" id="rb-file" style="display:none" accept="image/*,.pdf,.xlsx,.xls,.csv,.doc,.docx,.txt" onchange="handleFileSelect(this)">
+    </div>
+
+    <div id="form-err" class="err hidden"></div>
+    <div id="form-suc" class="suc hidden"></div>
+    <button class="btn-primary" id="submit-btn" onclick="submitClaim()">Submit Claim</button>
+    <button class="btn-secondary" onclick="goHome()">Cancel</button>
+  </div>
+</div>
+
+<!-- MY CLAIMS HISTORY -->
+<div id="s-hist" class="hidden">
+  <div class="page-top">
+    <button class="back-btn" onclick="goHome()">&#8592; Back</button>
+    <h2>My Claims</h2>
+    <button class="page-top-action" id="btn-refresh-hist" onclick="loadHistory()">&#8635; Refresh</button>
+  </div>
+  <div style="padding:14px 16px 30px;" id="hist-body"></div>
+</div>
+
+<!-- PENDING APPROVALS -->
+<div id="s-approve" class="hidden">
+  <div class="page-top">
+    <button class="back-btn" onclick="goHome()">&#8592; Back</button>
+    <h2>Team Approvals</h2>
+    <button class="page-top-action" onclick="loadApprovals()">&#8635; Refresh</button>
+  </div>
+  <div style="padding:14px 16px 30px;" id="approve-body"></div>
+</div>
+
+<!-- FINANCE — APPROVED CLAIMS -->
+<div id="s-finance" class="hidden">
+  <div class="page-top">
+    <button class="back-btn" onclick="goHome()">&#8592; Back</button>
+    <h2>Process Payments</h2>
+    <button class="page-top-action" onclick="loadFinancePending()">&#8635; Refresh</button>
+  </div>
+  <div style="padding:14px 16px 30px;" id="finance-body"></div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let user = null;
+let pendingClaims = [];
+let pendingCount  = 0;
+
+// PIN state variables
+let pinBuf       = '';   // live PIN entry buffer
+let setPinBuf    = '';   // set-pin buffer
+let setPinFirst  = '';   // confirmed first entry
+let setPinStage  = 0;    // 0=enter, 1=confirm
+let chPinBuf     = '';
+let chPinFirst   = '';
+let chPinStage   = 0;    // 0=old PIN, 1=new PIN, 2=confirm new
+
+const qs  = id => document.getElementById(id);
+const fmt = n  => Number(n).toLocaleString('en-KE', {minimumFractionDigits:0, maximumFractionDigits:2});
+function initials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+
+const SCREENS = ['s-loading','s-login','s-pin','s-setpin','s-changepin','s-reset','s-verify','s-home','s-form','s-hist','s-approve','s-finance'];
+function show(id){SCREENS.forEach(s=>qs(s).classList.toggle('hidden',s!==id));}
+
+function isApprover(){ return ['lm','manager'].includes(user.role); }
+function isFinance(){   return user.role === 'finance'; }
+const isDemo = () => CONFIG.SCRIPT_URL === 'YOUR_REIMBURSEMENT_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+// ═══════════════════════════════════════
+// API
+// ═══════════════════════════════════════
+async function apiFetch(params) {
+  const r = await fetch(CONFIG.SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain'},
+    body: JSON.stringify({...params, clientSecret: CONFIG.CLIENT_SECRET}),
+  });
+  return r.json();
+}
+
+// ═══════════════════════════════════════
+// PIN HASHING
+// ═══════════════════════════════════════
+async function hashPin(pin, email, staffId) {
+  const msg = `${email.toLowerCase()}:${staffId.toUpperCase()}:${pin}`;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ═══════════════════════════════════════
+// LOCKOUT
+// ═══════════════════════════════════════
+const LOCK_KEY = 'ko_reimb_lock';
+const LOCK_MAX = 5;
+const LOCK_DUR = 15 * 60 * 1000;
+
+function getLock(email) {
+  try { return JSON.parse(localStorage.getItem(LOCK_KEY+'_'+email) || 'null'); } catch { return null; }
+}
+function setLock(email, s) { localStorage.setItem(LOCK_KEY+'_'+email, JSON.stringify(s)); }
+function isLocked(email) {
+  const s = getLock(email);
+  if (!s) return false;
+  if (s.lockedUntil && Date.now() < s.lockedUntil) return true;
+  if (s.lockedUntil) setLock(email, null);
+  return false;
+}
+function lockMinsLeft(email) {
+  const s = getLock(email);
+  if (!s || !s.lockedUntil) return 0;
+  return Math.ceil((s.lockedUntil - Date.now()) / 60000);
+}
+function recordFailedAttempt(email) {
+  const s = getLock(email) || {attempts:0};
+  s.attempts = (s.attempts||0) + 1;
+  if (s.attempts >= LOCK_MAX) s.lockedUntil = Date.now() + LOCK_DUR;
+  setLock(email, s);
+  return s.attempts;
+}
+function clearLock(email) { setLock(email, null); }
+
+// ═══════════════════════════════════════
+// LOCAL STORAGE (claims)
+// ═══════════════════════════════════════
+function getLocalClaims() {
+  try { return JSON.parse(localStorage.getItem('ko_reimb_v1') || '[]'); } catch { return []; }
+}
+function saveLocalClaim(c) {
+  const a = getLocalClaims(); a.push(c);
+  localStorage.setItem('ko_reimb_v1', JSON.stringify(a));
+}
+function updateLocalClaim(claimId, updates) {
+  const a = getLocalClaims().map(c => c.claimId === claimId ? {...c, ...updates} : c);
+  localStorage.setItem('ko_reimb_v1', JSON.stringify(a));
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+function init() {
+  const deptSel = qs('rb-dept');
+  CONFIG.DEPARTMENTS.forEach(d => {
+    const o = document.createElement('option'); o.value=d; o.textContent=d; deptSel.appendChild(o);
+  });
+  show('s-login');
+}
+
+// ═══════════════════════════════════════
+// LOGIN FLOW
+// ═══════════════════════════════════════
+async function doLogin() {
+  const em  = qs('li-email').value.trim().toLowerCase();
+  const sid = qs('li-sid').value.trim().toUpperCase();
+  const err = qs('li-err'); const btn = qs('login-btn');
+  if (!em || !sid) { err.textContent='Please enter your email and Staff ID.'; err.classList.remove('hidden'); return; }
+
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Signing in...'; err.classList.add('hidden');
+  try {
+    if (isDemo()) {
+      user = { email:em, staffId:sid, name:'Demo User', department:'Management', role:'lm', lmName:'Demo Manager', lmEmail:'manager@africanoriginals.com', hasPin:false };
+      await enterHome();
+    } else {
+      const d = await apiFetch({action:'checkReimbUser', email:em, staffId:sid});
+      if (!d.found) { err.textContent='Email or Staff ID not found. Contact your admin.'; err.classList.remove('hidden'); btn.disabled=false; btn.innerHTML='Sign In'; return; }
+      user = { email:em, staffId:sid, name:d.name, department:d.department, role:d.role, lmName:d.lmName||'', lmEmail:d.lmEmail||'', hasPin:!!d.hasPin };
+      if (!user.hasPin) {
+        // First time — need to set PIN
+        resetSetPin();
+        show('s-setpin');
+      } else {
+        // Show PIN entry
+        showPinEntry();
+      }
+    }
+  } catch(e) {
+    err.textContent='Connection error. Please try again.'; err.classList.remove('hidden');
+  }
+  btn.disabled=false; btn.innerHTML='Sign In';
+}
+
+function backToLogin() {
+  user = null; pinBuf=''; setPinBuf=''; setPinFirst=''; chPinBuf=''; chPinFirst='';
+  show('s-login');
+}
+
+// ═══════════════════════════════════════
+// PIN ENTRY SCREEN
+// ═══════════════════════════════════════
+function showPinEntry() {
+  pinBuf = '';
+  if (isLocked(user.email)) {
+    const m = lockMinsLeft(user.email);
+    qs('pin-lock-msg').textContent = `Account locked. Try again in ${m} minute${m!==1?'s':''}.`;
+    qs('pin-lock-msg').classList.remove('hidden');
+  } else {
+    qs('pin-lock-msg').classList.add('hidden');
+  }
+  qs('pin-entry-name').textContent = user.name;
+  qs('pin-entry-err').textContent = '';
+  updatePinDots('pin-dots', 'pd', 0);
+  show('s-pin');
+}
+
+function updatePinDots(containerId, prefix, len, isErr) {
+  for (let i=0; i<4; i++) {
+    const d = qs(prefix+i);
+    d.classList.toggle('filled', i < len && !isErr);
+    d.classList.toggle('err', !!isErr && i < len);
+  }
+}
+
+function pinKey(k) {
+  if (isLocked(user.email)) return;
+  if (pinBuf.length >= 4) return;
+  pinBuf += k;
+  updatePinDots('pin-dots','pd',pinBuf.length);
+  if (pinBuf.length === 4) setTimeout(submitPin, 120);
+}
+function pinDel() { if (pinBuf.length>0){ pinBuf=pinBuf.slice(0,-1); updatePinDots('pin-dots','pd',pinBuf.length); } }
+
+async function submitPin() {
+  const entered = pinBuf; pinBuf='';
+  updatePinDots('pin-dots','pd',0);
+  if (isDemo()) { await enterHome(); return; }
+  try {
+    const hash = await hashPin(entered, user.email, user.staffId);
+    const res  = await apiFetch({action:'verifyReimbPin', email:user.email, pinHash:hash});
+    if (res.valid) {
+      clearLock(user.email);
+      qs('pin-entry-err').textContent = '';
+      await enterHome();
+    } else {
+      const attempts = recordFailedAttempt(user.email);
+      if (isLocked(user.email)) {
+        const m = lockMinsLeft(user.email);
+        qs('pin-entry-err').textContent = `Too many attempts. Locked for ${m} minute${m!==1?'s':''}.`;
+        qs('pin-lock-msg').textContent  = `Account locked. Try again in ${m} minute${m!==1?'s':''}.`;
+        qs('pin-lock-msg').classList.remove('hidden');
+      } else {
+        const left = LOCK_MAX - attempts;
+        qs('pin-entry-err').textContent = `Incorrect PIN. ${left} attempt${left!==1?'s':''} remaining.`;
+        // Flash dots red
+        updatePinDots('pin-dots','pd',4,true);
+        setTimeout(()=>updatePinDots('pin-dots','pd',0),600);
+      }
+    }
+  } catch(e) {
+    qs('pin-entry-err').textContent = 'Connection error. Try again.';
+  }
+}
+
+// ═══════════════════════════════════════
+// SET PIN (first time)
+// ═══════════════════════════════════════
+function resetSetPin() {
+  setPinBuf=''; setPinFirst=''; setPinStage=0;
+  qs('setpin-step-lbl').textContent = 'Enter new PIN';
+  qs('setpin-err').textContent = '';
+  qs('setpin-suc').classList.add('hidden');
+  updatePinDots('setpin-dots','spd',0);
+}
+
+function setPinKey(k) {
+  if (setPinBuf.length>=4) return;
+  setPinBuf += k;
+  updatePinDots('setpin-dots','spd',setPinBuf.length);
+  if (setPinBuf.length===4) setTimeout(advanceSetPin,120);
+}
+function setPinDel() { if(setPinBuf.length>0){setPinBuf=setPinBuf.slice(0,-1);updatePinDots('setpin-dots','spd',setPinBuf.length);} }
+
+async function advanceSetPin() {
+  if (setPinStage===0) {
+    setPinFirst = setPinBuf; setPinBuf='';
+    setPinStage = 1;
+    qs('setpin-step-lbl').textContent = 'Confirm new PIN';
+    updatePinDots('setpin-dots','spd',0);
+  } else {
+    if (setPinBuf !== setPinFirst) {
+      qs('setpin-err').textContent = 'PINs do not match. Try again.';
+      updatePinDots('setpin-dots','spd',4,true);
+      setTimeout(()=>{ setPinBuf=''; setPinFirst=''; setPinStage=0; qs('setpin-step-lbl').textContent='Enter new PIN'; updatePinDots('setpin-dots','spd',0); }, 800);
+      return;
+    }
+    // Save PIN
+    const pin = setPinBuf; setPinBuf=''; setPinFirst='';
+    if (!isDemo()) {
+      try {
+        const hash = await hashPin(pin, user.email, user.staffId);
+        const res = await apiFetch({action:'setReimbPin', email:user.email, staffId:user.staffId, pinHash:hash});
+        if (res.error) { qs('setpin-err').textContent=res.error; return; }
+      } catch(e) { qs('setpin-err').textContent='Connection error. Try again.'; return; }
+    }
+    user.hasPin = true;
+    qs('setpin-suc').textContent = 'PIN set successfully! Taking you in...';
+    qs('setpin-suc').classList.remove('hidden');
+    setTimeout(()=>enterHome(), 1200);
+  }
+}
+
+// ═══════════════════════════════════════
+// CHANGE PIN
+// ═══════════════════════════════════════
+function goChangePin() { chPinBuf=''; chPinFirst=''; chPinStage=0; qs('chpin-step-lbl').textContent='Enter current PIN'; qs('chpin-err').textContent=''; qs('chpin-suc').classList.add('hidden'); updatePinDots('chpin-dots','cpd',0); show('s-changepin'); }
+
+function chPinKey(k) {
+  if (chPinBuf.length>=4) return;
+  chPinBuf += k;
+  updatePinDots('chpin-dots','cpd',chPinBuf.length);
+  if (chPinBuf.length===4) setTimeout(advanceChPin,120);
+}
+function chPinDel() { if(chPinBuf.length>0){chPinBuf=chPinBuf.slice(0,-1);updatePinDots('chpin-dots','cpd',chPinBuf.length);} }
+
+async function advanceChPin() {
+  const entered = chPinBuf; chPinBuf=''; updatePinDots('chpin-dots','cpd',0);
+  if (chPinStage===0) {
+    // Verify current PIN
+    if (!isDemo()) {
+      try {
+        const hash = await hashPin(entered, user.email, user.staffId);
+        const res  = await apiFetch({action:'verifyReimbPin', email:user.email, pinHash:hash});
+        if (!res.valid) { qs('chpin-err').textContent='Incorrect current PIN.'; updatePinDots('chpin-dots','cpd',4,true); setTimeout(()=>updatePinDots('chpin-dots','cpd',0),600); return; }
+      } catch(e) { qs('chpin-err').textContent='Connection error.'; return; }
+    }
+    chPinStage=1; qs('chpin-step-lbl').textContent='Enter new PIN'; qs('chpin-err').textContent='';
+  } else if (chPinStage===1) {
+    chPinFirst=entered; chPinStage=2; qs('chpin-step-lbl').textContent='Confirm new PIN';
+  } else {
+    if (entered !== chPinFirst) { qs('chpin-err').textContent='PINs do not match.'; updatePinDots('chpin-dots','cpd',4,true); setTimeout(()=>{ chPinFirst=''; chPinStage=1; qs('chpin-step-lbl').textContent='Enter new PIN'; updatePinDots('chpin-dots','cpd',0); },800); return; }
+    if (!isDemo()) {
+      try {
+        const hash = await hashPin(entered, user.email, user.staffId);
+        const res = await apiFetch({action:'setReimbPin', email:user.email, staffId:user.staffId, pinHash:hash});
+        if (res.error) { qs('chpin-err').textContent=res.error; return; }
+      } catch(e) { qs('chpin-err').textContent='Connection error.'; return; }
+    }
+    qs('chpin-suc').textContent='PIN changed successfully!'; qs('chpin-suc').classList.remove('hidden');
+    setTimeout(()=>show('s-home'), 1500);
+  }
+}
+
+// ═══════════════════════════════════════
+// FORGOT PIN FLOW
+// ═══════════════════════════════════════
+function goForgotPin() {
+  qs('rst-email').value = user ? user.email : '';
+  qs('rst-sid').value   = user ? user.staffId : '';
+  qs('rst-err').classList.add('hidden');
+  qs('rst-suc').classList.add('hidden');
+  qs('rst-btn').disabled=false; qs('rst-btn').textContent='Send Reset Code';
+  show('s-reset');
+}
+
+async function doRequestReset() {
+  const em  = qs('rst-email').value.trim().toLowerCase();
+  const sid = qs('rst-sid').value.trim().toUpperCase();
+  const err = qs('rst-err'); const suc = qs('rst-suc'); const btn = qs('rst-btn');
+  if (!em||!sid) { err.textContent='Please enter your email and Staff ID.'; err.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Sending...'; err.classList.add('hidden'); suc.classList.add('hidden');
+  try {
+    const res = await apiFetch({action:'requestReimbReset', email:em, staffId:sid});
+    if (res.error) { err.textContent=res.error; err.classList.remove('hidden'); btn.disabled=false; btn.textContent='Send Reset Code'; return; }
+    suc.textContent='Code sent! Check your email inbox (valid for 15 minutes).'; suc.classList.remove('hidden');
+    setTimeout(()=>{ qs('vfy-otp').value=''; qs('vfy-pin1').value=''; qs('vfy-pin2').value=''; qs('vfy-err').classList.add('hidden'); qs('vfy-suc').classList.add('hidden'); show('s-verify'); }, 2000);
+  } catch(e) { err.textContent='Connection error.'; err.classList.remove('hidden'); btn.disabled=false; btn.textContent='Send Reset Code'; }
+}
+
+async function doVerifyReset() {
+  const em   = qs('rst-email').value.trim().toLowerCase();
+  const sid  = qs('rst-sid').value.trim().toUpperCase();
+  const otp  = qs('vfy-otp').value.trim();
+  const pin1 = qs('vfy-pin1').value.trim();
+  const pin2 = qs('vfy-pin2').value.trim();
+  const err  = qs('vfy-err'); const suc = qs('vfy-suc'); const btn = qs('vfy-btn');
+  err.classList.add('hidden'); suc.classList.add('hidden');
+  if (!otp)              { err.textContent='Please enter the 6-digit code.'; err.classList.remove('hidden'); return; }
+  if (pin1.length!==4)   { err.textContent='New PIN must be exactly 4 digits.'; err.classList.remove('hidden'); return; }
+  if (pin1!==pin2)       { err.textContent='PINs do not match.'; err.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Verifying...';
+  try {
+    const hash = await hashPin(pin1, em, sid);
+    const res  = await apiFetch({action:'verifyReimbReset', email:em, staffId:sid, otp, pinHash:hash});
+    if (res.error) { err.textContent=res.error; err.classList.remove('hidden'); btn.disabled=false; btn.textContent='Set New PIN'; return; }
+    suc.textContent='PIN reset successful! Redirecting to login...'; suc.classList.remove('hidden');
+    clearLock(em);
+    setTimeout(()=>{ show('s-login'); qs('li-email').value=em; qs('li-sid').value=sid; }, 2000);
+  } catch(e) { err.textContent='Connection error.'; err.classList.remove('hidden'); btn.disabled=false; btn.textContent='Set New PIN'; }
+}
+
+// ═══════════════════════════════════════
+// ENTER HOME
+// ═══════════════════════════════════════
+async function enterHome() {
+  qs('welcome-name').textContent = 'Hi, '+user.name.split(' ')[0]+'!';
+  qs('welcome-dept').textContent = (user.department || 'African Originals') + ' · ' + user.email;
+  qs('hdr-sub').textContent      = user.name + ' · ' + user.staffId;
+  qs('acct-avatar').textContent  = initials(user.name);
+  qs('acct-name-m').textContent  = user.name;
+  qs('acct-id-m').textContent    = user.staffId + ' · ' + user.email;
+
+  const badge    = qs('role-badge');
+  const roleLbl  = qs('acct-role-lbl');
+  if (isApprover()) {
+    badge.className='role-pill rp-lm'; badge.textContent='Line Manager'; roleLbl.textContent='Line Manager';
+  } else if (isFinance()) {
+    badge.className='role-pill rp-finance'; badge.textContent='Finance'; roleLbl.textContent='Finance Team';
+  } else {
+    badge.className='role-pill rp-staff'; badge.textContent='Staff'; roleLbl.textContent='Staff Member';
+  }
+
+  qs('menu-lm-item').style.display  = isApprover() ? 'flex' : 'none';
+  qs('menu-fin-item').style.display = isFinance()  ? 'flex' : 'none';
+  qs('lm-banner').classList.toggle('hidden', !isApprover());
+  qs('fin-banner').classList.toggle('hidden', !isFinance());
+
+  show('s-home');
+  loadDashStats();
+  if (isApprover()) loadPendingCount();
+  if (isFinance())  loadFinanceCount();
+}
+
+function doLogout() {
+  user = null; pendingClaims = []; pendingCount = 0;
+  pinBuf=''; setPinBuf=''; setPinFirst=''; chPinBuf=''; chPinFirst='';
+  closeAcctMenu();
+  ['li-email','li-sid'].forEach(id=>qs(id).value='');
+  qs('li-err').classList.add('hidden');
+  show('s-login');
+}
+
+// ═══════════════════════════════════════
+// ACCOUNT MENU
+// ═══════════════════════════════════════
+function openAcctMenu()  { qs('acct-overlay').classList.remove('hidden'); }
+function closeAcctMenu() { qs('acct-overlay').classList.add('hidden'); }
+
+// ═══════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════
+async function loadDashStats() {
+  const claims = getLocalClaims().filter(c => c.email === user.email);
+  updateStats(claims);
+  if (!isDemo()) {
+    try {
+      const res = await apiFetch({action:'getReimbursements', email:user.email});
+      const serverClaims = res.claims || [];
+      serverClaims.forEach(sc => {
+        const local = claims.find(c => c.claimId === sc.claimId);
+        if (local && local.status !== sc.status) updateLocalClaim(sc.claimId, {status:sc.status, lmComment:sc.lmComment, paidAt:sc.paidAt});
+      });
+      updateStats(getLocalClaims().filter(c => c.email === user.email));
+    } catch(e) { console.warn('Stats sync failed',e); }
+  }
+}
+
+function updateStats(claims) {
+  qs('stat-total').textContent    = claims.length;
+  qs('stat-pending').textContent  = claims.filter(c=>c.status==='submitted').length;
+  qs('stat-approved').textContent = claims.filter(c=>c.status==='approved').length;
+  qs('stat-paid').textContent     = claims.filter(c=>c.status==='paid').length;
+}
+
+async function loadPendingCount() {
+  if (isDemo()) { pendingCount = 1; updateApproveUI(); return; }
+  try {
+    const res = await apiFetch({action:'getPendingApprovals', lmEmail:user.email});
+    pendingCount  = (res.claims||[]).length;
+    pendingClaims = res.claims || [];
+    updateApproveUI();
+  } catch(e) {}
+}
+
+function updateApproveUI() {
+  const bannerBadge = qs('lm-badge-count');
+  if (bannerBadge) { bannerBadge.textContent=pendingCount; bannerBadge.style.display=pendingCount>0?'inline-block':'none'; }
+  const lmBanner = qs('lm-banner');
+  if (lmBanner) lmBanner.querySelector('.ab-sub').textContent = pendingCount > 0
+    ? pendingCount+' claim'+(pendingCount!==1?'s':'')+' waiting for your decision'
+    : 'No pending approvals right now';
+  const menuBadge = qs('menu-badge');
+  if (menuBadge) { menuBadge.textContent=pendingCount; menuBadge.style.display=pendingCount>0?'inline-block':'none'; }
+}
+
+async function loadFinanceCount() {
+  if (isDemo()) { updateFinanceUI(1); return; }
+  try {
+    const res = await apiFetch({action:'getApprovedClaims'});
+    updateFinanceUI((res.claims||[]).length);
+  } catch(e) {}
+}
+
+function updateFinanceUI(count) {
+  const badge = qs('fin-badge-count');
+  if (badge) { badge.textContent=count; badge.style.display=count>0?'inline-block':'none'; }
+  const banner = qs('fin-banner');
+  if (banner) banner.querySelector('.ab-sub').textContent = count > 0
+    ? count+' approved claim'+(count!==1?'s':'')+' ready for payment'
+    : 'No claims awaiting payment';
+  const menuBadge = qs('menu-fin-badge');
+  if (menuBadge) { menuBadge.textContent=count; menuBadge.style.display=count>0?'inline-block':'none'; }
+}
+
+// ═══════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════
+function goHome()       { loadDashStats(); show('s-home'); }
+function goNewClaim()   { resetForm(); show('s-form'); }
+function goHistory()    { loadHistory(); show('s-hist'); }
+function goApprovals()  { if (!isApprover()) return; loadApprovals(); show('s-approve'); }
+function goFinancePending() { if (!isFinance()) return; loadFinancePending(); show('s-finance'); }
+
+// ═══════════════════════════════════════
+// FORM
+// ═══════════════════════════════════════
+let selectedPayMethod = '';
+let attachFile = null;
+
+function resetForm() {
+  qs('rb-date').value   = new Date().toISOString().split('T')[0];
+  qs('rb-dept').value   = user.department || '';
+  qs('rb-amount').value = '';
+  qs('rb-desc').value   = '';
+  selectPayMethod('');
+  attachFile = null;
+  qs('rb-file').value = '';
+  updateAttachUI();
+  qs('form-err').classList.add('hidden');
+  qs('form-suc').classList.add('hidden');
+  const btn = qs('submit-btn'); btn.disabled=false; btn.innerHTML='Submit Claim';
+  qs('backdate-warn').classList.add('hidden');
+
+  // Populate LM info box from user object (server-authoritative)
+  qs('lm-info-name').textContent  = user.lmName  || '(No line manager assigned)';
+  qs('lm-info-email').textContent = user.lmEmail || '';
+}
+
+function checkBackdate() {
+  const dateVal = qs('rb-date').value;
+  if (!dateVal) return;
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const expDate  = new Date(dateVal); expDate.setHours(0,0,0,0);
+  const daysLate = Math.floor((today - expDate) / 86400000);
+  const warn     = qs('backdate-warn');
+  if (daysLate > 0) {
+    warn.innerHTML = `&#9888;&#65039; <strong>Backdated claim</strong> — this expense is ${daysLate} day${daysLate!==1?'s':''} old. Your line manager will see this when reviewing.`;
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
+}
+
+function selectPayMethod(m) {
+  selectedPayMethod = m;
+  ['account','paybill','mpesa','till'].forEach(k => {
+    qs('pm-'+k).classList.toggle('active', k===m);
+    qs('pd-'+k).classList.toggle('hidden', k!==m);
+  });
+}
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { qs('form-err').textContent='File too large — maximum 5 MB.'; qs('form-err').classList.remove('hidden'); input.value=''; return; }
+  attachFile = file; updateAttachUI();
+}
+
+function updateAttachUI() {
+  const zone=qs('attach-zone'); const info=qs('attach-info'); const rem=qs('attach-remove-btn');
+  if (attachFile) {
+    zone.classList.add('has-file');
+    info.textContent = attachFile.name+' ('+(attachFile.size/1024).toFixed(1)+' KB)';
+    rem.classList.remove('hidden');
+  } else {
+    zone.classList.remove('has-file');
+    info.innerHTML='Tap to attach receipt or supporting document<br>Photos, PDF, Excel, Word — max 5 MB';
+    rem.classList.add('hidden');
+  }
+}
+
+function removeAttach() { attachFile=null; qs('rb-file').value=''; updateAttachUI(); }
+
+function fileToBase64(file) {
+  return new Promise((res,rej) => {
+    const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════════
+// SUBMIT CLAIM
+// ═══════════════════════════════════════
+async function submitClaim() {
+  const date   = qs('rb-date').value.trim();
+  const dept   = qs('rb-dept').value;
+  const amount = parseFloat(qs('rb-amount').value);
+  const desc   = qs('rb-desc').value.trim();
+  const errEl  = qs('form-err'); const sucEl = qs('form-suc');
+  errEl.classList.add('hidden'); sucEl.classList.add('hidden');
+
+  if (!date)                  { errEl.textContent='Please select the expense date.';  errEl.classList.remove('hidden'); return; }
+  if (!dept)                  { errEl.textContent='Please select your department.';   errEl.classList.remove('hidden'); return; }
+  if (!user.lmEmail)          { errEl.textContent='No line manager assigned to your account. Contact admin.'; errEl.classList.remove('hidden'); return; }
+  if (!amount || amount <= 0) { errEl.textContent='Please enter a valid amount.';     errEl.classList.remove('hidden'); return; }
+  if (!selectedPayMethod)     { errEl.textContent='Please select a payment method.'; errEl.classList.remove('hidden'); return; }
+  if (!desc)                  { errEl.textContent='Please add a description.';       errEl.classList.remove('hidden'); return; }
+
+  let payDetails = {};
+  if (selectedPayMethod === 'account') {
+    const bank=qs('pd-bank').value.trim(), acc=qs('pd-accnum').value.trim();
+    if (!bank||!acc) { errEl.textContent='Please enter bank name and account number.'; errEl.classList.remove('hidden'); return; }
+    payDetails = {bankName:bank, accountNumber:acc};
+  } else if (selectedPayMethod === 'paybill') {
+    const pb=qs('pd-pbnum').value.trim(), ref=qs('pd-pbref').value.trim();
+    if (!pb||!ref) { errEl.textContent='Please enter paybill number and account reference.'; errEl.classList.remove('hidden'); return; }
+    payDetails = {paybillNumber:pb, accountRef:ref};
+  } else if (selectedPayMethod === 'mpesa') {
+    const mp=qs('pd-mpnum').value.trim();
+    if (!mp) { errEl.textContent='Please enter M-Pesa number.'; errEl.classList.remove('hidden'); return; }
+    payDetails = {mpesaNumber:mp};
+  } else if (selectedPayMethod === 'till') {
+    const tn=qs('pd-tillnum').value.trim();
+    if (!tn) { errEl.textContent='Please enter till number.'; errEl.classList.remove('hidden'); return; }
+    payDetails = {tillNumber:tn};
+  }
+
+  // Backdated?
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const expDate = new Date(date); expDate.setHours(0,0,0,0);
+  const daysLate = Math.max(0, Math.floor((today - expDate) / 86400000));
+
+  const btn = qs('submit-btn');
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Submitting...';
+
+  let attachBase64=null, attachName=null, attachMime=null;
+  if (attachFile) {
+    try {
+      btn.innerHTML='<div class="spinner"></div> Uploading attachment...';
+      attachBase64 = await fileToBase64(attachFile);
+      attachName   = attachFile.name;
+      attachMime   = attachFile.type||'application/octet-stream';
+    } catch(e) { console.warn('File read error',e); }
+  }
+
+  const claimId = 'RB-'+Date.now();
+  const claim = {
+    claimId, email:user.email, name:user.name, staffId:user.staffId,
+    department:dept, lmName:user.lmName, lmEmail:user.lmEmail,
+    amount, payMethod:selectedPayMethod, payDetails, description:desc,
+    expenseDate:date, backdated:daysLate>0, daysLate,
+    submittedAt:new Date().toISOString(),
+    attachBase64, attachName, attachMime,
+    status:'submitted',
+  };
+
+  const localClaim = {...claim}; delete localClaim.attachBase64;
+  saveLocalClaim(localClaim);
+
+  if (!isDemo()) {
+    btn.innerHTML='<div class="spinner"></div> Saving...';
+    try { await apiFetch({action:'saveReimbursement', ...claim}); }
+    catch(e) { console.warn('Sync failed — saved locally',e); }
+  }
+
+  const payLabel = {account:'Bank Account',paybill:'Paybill',mpesa:'M-Pesa',till:'Till Number'}[selectedPayMethod];
+  const backdateNote = daysLate > 0 ? `<br><span style="color:var(--amber);font-size:11px">⚠ Backdated by ${daysLate} day${daysLate!==1?'s':''}</span>` : '';
+  sucEl.innerHTML = `✅ <strong>Claim submitted!</strong> Reference: <strong>${claimId}</strong><br>
+    KES ${fmt(amount)} · ${dept} · ${payLabel}${backdateNote}<br>
+    <span style="font-size:11px;opacity:.85">${isDemo()?'Demo mode — no email sent':'Your line manager '+user.lmName+' has been notified by email.'}</span>`;
+  sucEl.classList.remove('hidden');
+  btn.disabled=false; btn.textContent='Submit Another Claim';
+  attachFile=null; qs('rb-file').value=''; updateAttachUI();
+  updateStats(getLocalClaims().filter(c=>c.email===user.email));
+}
+
+// ═══════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════
+async function loadHistory() {
+  const body = qs('hist-body');
+  body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray)"><div class="lg-spin" style="border-top-color:var(--blue);margin:0 auto 14px"></div>Loading...</div>';
+
+  let claims = getLocalClaims().filter(c=>c.email===user.email).sort((a,b)=>new Date(b.submittedAt)-new Date(a.submittedAt));
+
+  if (!isDemo()) {
+    try {
+      const res = await apiFetch({action:'getReimbursements', email:user.email});
+      (res.claims||[]).forEach(s => updateLocalClaim(s.claimId, {
+        status:s.status, lmComment:s.lmComment, decidedAt:s.decidedAt,
+        paidAt:s.paidAt, paidBy:s.paidBy, attachUrl:s.attachUrl, attachName:s.attachName
+      }));
+      claims = getLocalClaims().filter(c=>c.email===user.email).sort((a,b)=>new Date(b.submittedAt)-new Date(a.submittedAt));
+    } catch(e) {}
+  }
+
+  updateStats(claims);
+
+  const statsHtml = `<div class="reimb-stats">
+    <div class="rs-card"><div class="rs-val">${claims.length}</div><div class="rs-lbl">Total</div></div>
+    <div class="rs-card"><div class="rs-val" style="color:var(--red)">${claims.filter(c=>c.status==='submitted').length}</div><div class="rs-lbl">Pending</div></div>
+    <div class="rs-card"><div class="rs-val" style="color:var(--teal)">${claims.filter(c=>c.status==='approved').length}</div><div class="rs-lbl">Approved</div></div>
+    <div class="rs-card"><div class="rs-val" style="color:var(--gold)">${claims.filter(c=>c.status==='paid').length}</div><div class="rs-lbl">Paid</div></div>
+  </div>`;
+
+  if (!claims.length) {
+    body.innerHTML = statsHtml + '<div style="text-align:center;padding:3rem 1rem;color:var(--gray)"><p style="font-size:28px;margin-bottom:10px">📋</p><p style="font-size:14px">No claims yet.<br>Tap New Claim to submit your first expense.</p></div>';
+    return;
+  }
+
+  const statusClass  = {submitted:'sb-submitted',approved:'sb-approved',rejected:'sb-rejected',paid:'sb-paid'};
+  const statusLabel  = {submitted:'Pending Review',approved:'Approved',rejected:'Rejected',paid:'Paid'};
+  const payMethodLbl = {account:'Bank Account',paybill:'Paybill',mpesa:'M-Pesa',till:'Till Number'};
+  const pdFieldLbl   = {bankName:'Bank',accountNumber:'Account No.',paybillNumber:'Paybill No.',accountRef:'Account Ref',mpesaNumber:'M-Pesa No.',tillNumber:'Till No.'};
+
+  const fmtDt = (iso,opts) => iso ? new Date(iso).toLocaleDateString('en-KE',opts) : '';
+  const fmtTm = iso => iso ? new Date(iso).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) : '';
+  const shortDt = iso => iso ? fmtDt(iso,{day:'numeric',month:'short'}) : '';
+
+  const cards = claims.map(c => {
+    const sc = statusClass[c.status]||'sb-submitted';
+    const sl = statusLabel[c.status]||c.status;
+    const pm = payMethodLbl[c.payMethod]||c.payMethod;
+    const subFull  = fmtDt(c.submittedAt,{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + ' at ' + fmtTm(c.submittedAt);
+    const decFull  = c.decidedAt ? fmtDt(c.decidedAt,{day:'numeric',month:'short',year:'numeric'}) + ' at ' + fmtTm(c.decidedAt) : '';
+    const paidFull = c.paidAt ? fmtDt(c.paidAt,{day:'numeric',month:'short',year:'numeric'}) : '';
+    const pd = c.payDetails||{};
+    const pdRows = Object.entries(pd).filter(([,v])=>v).map(([k,v]) =>
+      `<div class="hc-row"><span class="hc-lbl">${pdFieldLbl[k]||k}</span><span class="hc-val" style="font-family:monospace">${v}</span></div>`
+    ).join('');
+    const commentSection = c.lmComment
+      ? `<div class="hc-section" style="background:var(--red-lt);border-color:rgba(163,45,45,.15)"><div class="hc-section-lbl" style="color:var(--red)">LM Feedback</div><p style="font-size:13px;color:var(--red);line-height:1.6;margin:0">${c.lmComment}</p></div>` : '';
+    const attachSection = c.attachUrl
+      ? `<div class="hc-section"><div class="hc-section-lbl">Supporting Document</div><a href="${c.attachUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--blue);text-decoration:none;border:1px solid var(--blue);border-radius:7px;padding:7px 12px;">📎 ${c.attachName||'View attachment'}</a></div>` : '';
+    const backdateNote = c.backdated
+      ? `<div class="hc-row"><span class="hc-lbl" style="color:var(--amber)">Backdated</span><span class="hc-val" style="color:var(--amber)">${c.daysLate} day${c.daysLate!==1?'s':''} late</span></div>` : '';
+    const isRej    = c.status==='rejected';
+    const step2cls = isRej?'st-rejected':['approved','paid'].includes(c.status)?'st-done':'st-current';
+    const step3cls = c.status==='paid'?'st-done':(c.status==='approved'?'st-current':'');
+    const timeline = `<div class="hc-section" style="padding-bottom:4px"><div class="hc-section-lbl">Progress</div></div>
+    <div class="st-timeline">
+      <div class="st-step st-done"><div class="st-dot">✓</div><div class="st-lbl">Submitted</div><div class="st-date">${shortDt(c.submittedAt)}<br>${fmtTm(c.submittedAt)}</div></div>
+      <div class="st-step ${step2cls}"><div class="st-dot">${isRej?'✕':['approved','paid'].includes(c.status)?'✓':'…'}</div><div class="st-lbl">${isRej?'Rejected':c.status==='submitted'?'Awaiting LM':'LM Approved'}</div><div class="st-date">${decFull||(c.status==='submitted'?'Pending':'')}</div></div>
+      <div class="st-step ${step3cls}"><div class="st-dot">${c.status==='paid'?'✓':'💳'}</div><div class="st-lbl">${c.status==='paid'?'Paid':'Payment'}</div><div class="st-date">${paidFull||(c.status==='approved'?'In progress':c.status==='paid'?'':'—')}</div></div>
+    </div>`;
+    return `<div class="hc">
+      <div class="hc-header"><div><div class="hc-amount">KES ${fmt(c.amount)}</div><div class="hc-id">${c.claimId}</div></div><span class="status-badge ${sc}">${sl}</span></div>
+      <div class="hc-section"><div class="hc-section-lbl">Claim Details</div>
+        <div class="hc-row"><span class="hc-lbl">Date Submitted</span><span class="hc-val">${subFull}</span></div>
+        ${c.expenseDate ? `<div class="hc-row"><span class="hc-lbl">Expense Date</span><span class="hc-val">${c.expenseDate}</span></div>` : ''}
+        <div class="hc-row"><span class="hc-lbl">Department</span><span class="hc-val">${c.department}</span></div>
+        <div class="hc-row"><span class="hc-lbl">Description</span><span class="hc-val">${c.description}</span></div>
+        ${backdateNote}
+      </div>
+      <div class="hc-section"><div class="hc-section-lbl">Payment — ${pm}</div>${pdRows||'<div style="font-size:12px;color:var(--gray)">No payment details</div>'}</div>
+      <div class="hc-section"><div class="hc-section-lbl">Line Manager</div>
+        <div class="hc-row"><span class="hc-lbl">Name</span><span class="hc-val">${c.lmName||'—'}</span></div>
+        <div class="hc-row"><span class="hc-lbl">Email</span><span class="hc-val" style="font-size:12px">${c.lmEmail||'—'}</span></div>
+        ${decFull?`<div class="hc-row"><span class="hc-lbl">Decision date</span><span class="hc-val">${decFull}</span></div>`:''}
+        ${paidFull?`<div class="hc-row"><span class="hc-lbl">Payment date</span><span class="hc-val">${paidFull}${c.paidBy?' · '+c.paidBy:''}</span></div>`:''}
+      </div>
+      ${commentSection}${attachSection}${timeline}
+    </div>`;
+  }).join('');
+
+  body.innerHTML = statsHtml + cards;
+}
+
+// ═══════════════════════════════════════
+// PENDING APPROVALS (LM)
+// ═══════════════════════════════════════
+async function loadApprovals() {
+  const body = qs('approve-body');
+  body.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:var(--gray)"><div class="lg-spin" style="border-top-color:var(--blue);margin:0 auto 14px"></div>Loading...</div>';
+  if (isDemo()) {
+    pendingClaims = [{claimId:'RB-DEMO001',name:'Demo Staff',email:'staff@africanoriginals.com',staffId:'AO002',department:'Sales',amount:4500,payMethod:'mpesa',payDetails:{mpesaNumber:'0712345678'},description:'Fuel for client visit to Mombasa on 15 April',attachUrl:'',attachName:'',submittedAt:new Date().toISOString(),token:'demo-token',backdated:false,daysLate:0}];
+    pendingCount=1; updateApproveUI(); renderApproveList(); return;
+  }
+  try {
+    const res = await apiFetch({action:'getPendingApprovals', lmEmail:user.email});
+    pendingClaims=res.claims||[]; pendingCount=pendingClaims.length; updateApproveUI(); renderApproveList();
+  } catch(e) {
+    body.innerHTML='<p style="text-align:center;color:var(--red);padding:2rem">Failed to load. Please try again.</p>';
+  }
+}
+
+function renderApproveList() {
+  const body = qs('approve-body');
+  if (!pendingClaims.length) { body.innerHTML='<div style="text-align:center;padding:3rem 1rem"><p style="font-size:32px;margin-bottom:10px">✅</p><p style="font-size:14px;color:var(--gray)">No pending approvals.</p></div>'; return; }
+  const pl = {account:'Bank Account',paybill:'Paybill',mpesa:'M-Pesa',till:'Till Number'};
+  body.innerHTML = pendingClaims.map((c,idx) => {
+    const d=new Date(c.submittedAt);
+    const ds=d.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
+    const ts=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+    const pm=pl[c.payMethod]||c.payMethod;
+    const attachBtn = c.attachUrl ? `<a href="${c.attachUrl}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;border:1px solid var(--blue);border-radius:6px;padding:4px 10px;margin-top:8px;display:inline-block;">📎 View Attachment</a>` : '';
+    const bdNote = c.backdated ? `<div style="font-size:11px;color:var(--amber);font-weight:600;margin-top:6px">⚠ Backdated — ${c.daysLate} day${c.daysLate!==1?'s':''} late</div>` : '';
+    return `<div class="pending-item" onclick="openReviewModal(${idx})">
+      <div class="pending-item-hdr">
+        <div><div class="pending-item-name">${c.name}</div><span style="font-size:11px;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:9px;font-weight:600">${c.staffId}</span></div>
+        <div class="pending-item-amt">KES ${fmt(c.amount)}</div>
+      </div>
+      <div class="pending-item-meta">${c.department} · ${pm}<br>${ds} at ${ts}</div>
+      <div class="pending-item-desc">${c.description}</div>
+      ${bdNote}${attachBtn}
+      <div style="margin-top:10px;font-size:12px;color:var(--blue);font-weight:600;">Tap to review →</div>
+    </div>`;
+  }).join('');
+}
+
+function openReviewModal(idx) {
+  const c = pendingClaims[idx]; if (!c) return;
+  window._reviewCtx = {idx, token:c.token, claimId:c.claimId};
+  const d=new Date(c.submittedAt);
+  const ds=d.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const ts=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  const pm={account:'Bank Account',paybill:'Paybill',mpesa:'M-Pesa',till:'Till Number'}[c.payMethod]||c.payMethod;
+  const pd=c.payDetails||{};
+  const pdLabel={bankName:'Bank',accountNumber:'Account No.',paybillNumber:'Paybill No.',accountRef:'Acct Ref',mpesaNumber:'M-Pesa No.',tillNumber:'Till No.'};
+  const pdRows=Object.entries(pd).filter(([,v])=>v).map(([k,v]) =>
+    `<div class="modal-row"><span class="modal-lbl">${pdLabel[k]||k}</span><span class="modal-val" style="font-family:monospace">${v}</span></div>`
+  ).join('');
+  const attachBtn = c.attachUrl ? `<div class="modal-row"><span class="modal-lbl">Attachment</span><span class="modal-val"><a href="${c.attachUrl}" target="_blank" style="color:var(--blue)">${c.attachName||'View file'}</a></span></div>` : '';
+  const bdRow = c.backdated ? `<div class="modal-row"><span class="modal-lbl" style="color:var(--amber)">Backdated</span><span class="modal-val" style="color:var(--amber);font-weight:700">${c.daysLate} day${c.daysLate!==1?'s':''} late ⚠</span></div>` : '';
+  qs('modal-content').innerHTML = `
+    <div class="modal-title">Review Claim</div>
+    <div class="modal-row"><span class="modal-lbl">Requester</span><span class="modal-val">${c.name} · ${c.staffId}</span></div>
+    <div class="modal-row"><span class="modal-lbl">Department</span><span class="modal-val">${c.department}</span></div>
+    <div class="modal-row"><span class="modal-lbl">Amount</span><span class="modal-val" style="color:var(--blue);font-size:17px;font-weight:700">KES ${fmt(c.amount)}</span></div>
+    <div class="modal-row"><span class="modal-lbl">Payment Via</span><span class="modal-val">${pm}</span></div>
+    ${pdRows}
+    <div class="modal-row"><span class="modal-lbl">Description</span><span class="modal-val">${c.description}</span></div>
+    <div class="modal-row"><span class="modal-lbl">Submitted</span><span class="modal-val">${ds}<br>${ts}</span></div>
+    ${bdRow}${attachBtn}
+    <div class="modal-comment">
+      <label>Comment (required when rejecting)</label>
+      <textarea id="review-comment" placeholder="Add a note for the requester..."></textarea>
+    </div>
+    <div id="review-err" class="err hidden"></div>
+    <div class="modal-btns">
+      <button class="btn-reject"  id="btn-reject"  onclick="submitDecision('rejected')">❌ Reject</button>
+      <button class="btn-approve" id="btn-approve" onclick="submitDecision('approved')">✅ Approve</button>
+    </div>
+    <button class="btn-secondary" style="margin-top:10px" onclick="closeModal()">Cancel</button>`;
+  qs('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() { qs('modal-overlay').classList.add('hidden'); }
+
+async function submitDecision(decision) {
+  const ctx=window._reviewCtx; if (!ctx) return;
+  const comment=qs('review-comment').value.trim();
+  const errEl=qs('review-err'); errEl.classList.add('hidden');
+  if (decision==='rejected' && !comment) { errEl.textContent='Please add a comment explaining the rejection.'; errEl.classList.remove('hidden'); return; }
+  qs('btn-approve').disabled=true; qs('btn-reject').disabled=true;
+  qs('btn-approve').innerHTML='<div class="spinner" style="border-top-color:white"></div>';
+  if (!isDemo()) {
+    try { await apiFetch({action:'approveReimb', token:ctx.token, decision, comment}); }
+    catch(e) { errEl.textContent='Failed to save. Please try again.'; errEl.classList.remove('hidden'); qs('btn-approve').disabled=false; qs('btn-reject').disabled=false; qs('btn-approve').textContent='✅ Approve'; return; }
+  }
+  pendingClaims.splice(ctx.idx,1); pendingCount=pendingClaims.length;
+  updateApproveUI(); closeModal(); renderApproveList();
+}
+
+// ═══════════════════════════════════════
+// FINANCE — MARK AS PAID
+// ═══════════════════════════════════════
+async function loadFinancePending() {
+  const body = qs('finance-body');
+  body.innerHTML='<div style="text-align:center;padding:3rem 1rem;color:var(--gray)"><div class="lg-spin" style="border-top-color:var(--blue);margin:0 auto 14px"></div>Loading...</div>';
+  let claims=[];
+  if (isDemo()) {
+    claims=[{claimId:'RB-DEMO002',name:'Demo Staff',email:'staff@africanoriginals.com',staffId:'AO002',department:'Sales',amount:4500,payMethod:'mpesa',payDetails:{mpesaNumber:'0712345678'},description:'Fuel for client visit',submittedAt:new Date().toISOString(),status:'approved',lmName:'Demo Manager',decidedAt:new Date().toISOString()}];
+  } else {
+    try { const res=await apiFetch({action:'getApprovedClaims'}); claims=res.claims||[]; }
+    catch(e) { body.innerHTML='<p style="text-align:center;color:var(--red);padding:2rem">Failed to load. Please try again.</p>'; return; }
+  }
+  updateFinanceUI(claims.length);
+  if (!claims.length) { body.innerHTML='<div style="text-align:center;padding:3rem 1rem"><p style="font-size:32px;margin-bottom:10px">✅</p><p style="font-size:14px;color:var(--gray)">No approved claims awaiting payment.</p></div>'; return; }
+  const pl={account:'Bank Account',paybill:'Paybill',mpesa:'M-Pesa',till:'Till Number'};
+  const pdLabel={bankName:'Bank',accountNumber:'Account No.',paybillNumber:'Paybill No.',accountRef:'Acct Ref',mpesaNumber:'M-Pesa No.',tillNumber:'Till No.'};
+  body.innerHTML = `<div style="background:var(--teal-lt);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--teal)"><strong>${claims.length} approved claim${claims.length!==1?'s':''}</strong> awaiting payment. Mark each as paid once processed.</div>` +
+  claims.map(c => {
+    const d=new Date(c.submittedAt);
+    const ds=d.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
+    const pd=c.payDetails||{};
+    const pdRows=Object.entries(pd).filter(([,v])=>v).map(([k,v]) =>
+      `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--gray)">${pdLabel[k]||k}</span><span style="font-family:monospace;font-weight:600">${v}</span></div>`
+    ).join('');
+    return `<div class="reimb-item" style="margin-bottom:12px">
+      <div class="reimb-item-hdr">
+        <div><div class="reimb-item-dept">${c.name} · ${c.staffId}</div><div class="reimb-item-date">${c.department} · ${ds} · Approved by ${c.lmName||'LM'}</div></div>
+        <div class="reimb-item-amt">KES ${fmt(c.amount)}</div>
+      </div>
+      <div class="reimb-item-desc">${c.description}</div>
+      <div style="margin-top:10px;padding:10px;background:#f9fafb;border-radius:8px;">
+        <div style="font-size:11px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${pl[c.payMethod]||c.payMethod}</div>
+        ${pdRows}
+      </div>
+      <button onclick="markAsPaid('${c.claimId}',this)" style="margin-top:12px;width:100%;padding:11px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">✅ Mark as Paid</button>
+    </div>`;
+  }).join('');
+}
+
+async function markAsPaid(claimId, btn) {
+  btn.disabled=true; btn.innerHTML='<span style="opacity:.7">Processing...</span>';
+  if (!isDemo()) {
+    try {
+      const res=await apiFetch({action:'markReimbPaid', claimId, paidBy:user.name});
+      if (res.error) { btn.disabled=false; btn.textContent='✅ Mark as Paid'; alert('Error: '+res.error); return; }
+    } catch(e) { btn.disabled=false; btn.textContent='✅ Mark as Paid'; alert('Connection error. Try again.'); return; }
+  }
+  btn.textContent='✅ Paid — requester notified'; btn.style.background='#9ca3af';
+  setTimeout(()=>loadFinancePending(),1500);
+}
+
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+init();
+</script>
+</body>
+</html>
